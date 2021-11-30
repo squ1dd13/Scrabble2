@@ -39,35 +39,35 @@ namespace Scrabble {
             Game.Save();
         }
 
-        private static List<string> BoardRepresentation() {
+        private static List < string > BoardRepresentation() {
             // Define the different parts we need.
             const string
-                topLabels = "    1   2   3   4   5   6   7   8   9  10  11  12  13  14  15",
+            topLabels = "    1   2   3   4   5   6   7   8   9  10  11  12  13  14  15",
                 top = "  ┌───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┐",
                 rowSeparator = "  ├───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┤",
                 row =
-                    "│ {0} │ {1} │ {2} │ {3} │ {4} │ {5} │ {6} │ {7} │ {8} │ {9} │ {10} │ {11} │ {12} │ {13} │ {14} │",
+                "│ {0} │ {1} │ {2} │ {3} │ {4} │ {5} │ {6} │ {7} │ {8} │ {9} │ {10} │ {11} │ {12} │ {13} │ {14} │",
                 bottom = "  └───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┘";
 
             // Add the top line.
-            var parts = new List<string> {
+            var parts = new List < string > {
                 topLabels,
                 top
             };
 
             // Split into rows (each row is 15 squares wide).
-            List<List<(int column, char row)>> lists = Game.Board.Squares.Keys.ToList().SplitList(15);
+            List < List < (int column, char row) >> lists = Game.Board.Squares.Keys.ToList().SplitList(15);
 
             // Iterate over the list of lists of squares we made.
-            foreach (List<(int column, char row)> lst in lists) {
-                var chars = new List<char>();
+            foreach(List < (int column, char row) > lst in lists) {
+                var chars = new List < char > ();
 
-                foreach ((int column, char row) pos in lst) {
+                foreach((int column, char row) pos in lst) {
                     chars.Add(Game.Board.GetSquareContents(pos));
                 }
 
                 // Turn the list of chars into an array of strings that is officially an array of objects.
-                object[] strChars = chars.Select(c => c.ToString()).ToArray<object>();
+                object[] strChars = chars.Select(c => c.ToString()).ToArray < object > ();
                 parts.Add(lst[0].row + " " + string.Format(row, strChars));
                 parts.Add(rowSeparator);
             }
@@ -81,7 +81,7 @@ namespace Scrabble {
 
         private static void PrintBoard() {
             // Print the board.
-            foreach (string segment in BoardRepresentation()) {
+            foreach(string segment in BoardRepresentation()) {
                 Console.WriteLine(segment);
             }
         }
@@ -95,7 +95,7 @@ namespace Scrabble {
         }
 
         private static Brain.Move ParseMove(string input) {
-            List<string> parts = input.Split(' ').ToList();
+            List < string > parts = input.Split(' ').ToList();
 
             string firstPosNumber = Regex.Match(parts[1], @"\d+").Value;
             string secondPosNumber = Regex.Match(parts[2], @"\d+").Value;
@@ -117,32 +117,33 @@ namespace Scrabble {
             while (!ValidateMoveInput(input)) {
                 Console.Write("Enter a move (type '?' for help): ");
 
-                input = Console.ReadLine().ToUpper();
-                if (input.Contains("?")) {
+                input = Console.ReadLine().ToUpper().Trim(null);
+                if (input == "?") {
                     Console.WriteLine("Moves should be given in the format: word <start square> <end square>");
                     Console.WriteLine("For example, \"hello 1a 5a\" (without the quotes).");
                     Console.WriteLine(
-                        "You can also enter commands. Currently you can use '!isword word' to check if 'word' " +
-                        "is valid."
+                        "You can also use '?check <word>' to see if a word is valid."
                     );
                 }
 
-                if (!input.Contains("!ISWORD ")) {
+                if (!input.StartsWith("?CHECK ")) {
                     continue;
                 }
 
-                string rest = input.Replace("!ISWORD ", "");
+                string rest = input.Replace("?CHECK ", "");
                 if (Words.WordSet.Contains(rest.ToUpper().Trim(null))) {
                     PerformColor(
-                        ConsoleColor.DarkCyan,
+                        ConsoleColor.Green,
                         () => {
                             Console.WriteLine(
-                                $"Valid: {Words.Definitions[rest.ToUpper().Trim(null)].Trim(null)}"
+                                $"I know that one. Here's the definition: '{Words.Definitions[rest.ToUpper().Trim(null)].Trim(null).Replace("  ", " ")}'"
                             );
                         }
                     );
                 } else {
-                    PerformColor(ConsoleColor.DarkCyan, () => { Console.WriteLine("Invalid"); });
+                    PerformColor(ConsoleColor.DarkCyan, () => {
+                        Console.WriteLine("Sorry, that's not a valid word.");
+                    });
                 }
             }
 
@@ -164,7 +165,7 @@ namespace Scrabble {
             Console.Write("Letters: ");
             string letterInput = Console.ReadLine();
             while (letterInput != null && !letterInput.All(c => char.IsLetter(c) || c == '_') ||
-                   letterInput.Length > 7) {
+                letterInput.Length > 7) {
                 Console.Write("Letters: ");
                 letterInput = Console.ReadLine();
 
@@ -173,7 +174,7 @@ namespace Scrabble {
             }
 
             Game.Letters.AddRange(letterInput.ToUpper().ToCharArray());
-            foreach (char letter in Game.Letters) {
+            foreach(char letter in Game.Letters) {
                 if (letter == '_') {
                     Game.BlankCount++;
                 }
@@ -191,8 +192,6 @@ namespace Scrabble {
                 return;
             }
 
-            GetLetters();
-
             while (true) {
                 try {
                     for (var i = 0; i < peoplePlaying; i++) {
@@ -200,7 +199,9 @@ namespace Scrabble {
                         if (!Words.WordSet.Contains(opponentMove.Word)) {
                             PerformColor(
                                 ConsoleColor.DarkRed,
-                                () => { Console.WriteLine($"{opponentMove.Word} is not a valid Scrabble word!"); }
+                                () => {
+                                    Console.WriteLine($"{opponentMove.Word} is not a valid Scrabble word!");
+                                }
                             );
                             i--;
                         } else {
@@ -209,13 +210,19 @@ namespace Scrabble {
                         }
                     }
 
+                    GetLetters();
+
                     Brain.Move selfMove = null;
                     var considered = 0;
-                    int time = Time(() => { selfMove = Game.Brain.BestMove(out considered); });
+                    int time = Time(() => {
+                        selfMove = Game.Brain.BestMove(out considered);
+                    });
 
                     PerformColor(
                         ConsoleColor.Magenta,
-                        () => { Console.WriteLine($"Considered {considered} moves in {time} seconds."); }
+                        () => {
+                            Console.WriteLine($"Considered {considered} moves in {time} seconds.");
+                        }
                     );
 
                     Console.CursorVisible = true;
@@ -232,10 +239,12 @@ namespace Scrabble {
                     Console.Write($"{selfMove.Word.ToLower()}: ");
                     PerformColor(
                         ConsoleColor.DarkBlue,
-                        () => { Console.Write($"'{Words.Definitions[selfMove.Word].Trim(null)}'"); }
+                        () => {
+                            Console.Write($"'{Words.Definitions[selfMove.Word].Trim(null)}'");
+                        }
                     );
                     Console.WriteLine();
-                    GetLetters();
+                    // GetLetters();
                 } catch (Exception e) {
                     Console.WriteLine($"DEBUG: Encountered error: {e}");
                 }
